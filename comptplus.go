@@ -215,6 +215,10 @@ func (co *CobraPrompt) prepareCommands() {
 func (co *CobraPrompt) findSuggestions(d prompt.Document) ([]prompt.Suggest, istrings.RuneNumber, istrings.RuneNumber) {
 	command := co.RootCmd
 	args := strings.Fields(d.CurrentLine())
+	w := d.GetWordBeforeCursor()
+
+	endIndex := d.CurrentRuneIndex()
+	startIndex := endIndex - istrings.RuneCount([]byte(w))
 
 	if found, _, err := command.Find(args); err == nil {
 		command = found
@@ -242,10 +246,10 @@ func (co *CobraPrompt) findSuggestions(d prompt.Document) ([]prompt.Suggest, ist
 	}
 
 	if co.SuggestionFilter != nil {
-		return co.SuggestionFilter(suggestions, &d), 0, 0
+		return co.SuggestionFilter(suggestions, &d), startIndex, endIndex
 	}
 
-	return prompt.FilterHasPrefix(suggestions, d.GetWordBeforeCursor(), true), 0, 0
+	return prompt.FilterHasPrefix(suggestions, w, true), startIndex, endIndex
 }
 
 // getFlagSuggestions returns a slice of flag suggestions.
