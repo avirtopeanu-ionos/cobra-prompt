@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/c-bata/go-prompt"
-	cobraprompt "github.com/stromland/cobra-prompt"
-	"github.com/stromland/cobra-prompt/_example/cmd"
+	"github.com/elk-language/go-prompt"
+	cobraprompt "github.com/ionoscloudsdk/comptplus"
+	"github.com/ionoscloudsdk/comptplus/_example/cmd"
 )
 
 var advancedPrompt = &cobraprompt.CobraPrompt{
@@ -16,9 +16,9 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 	DisableCompletionCommand: true,
 	AddDefaultExitCommand:    true,
 	GoPromptOptions: []prompt.Option{
-		prompt.OptionTitle("cobra-prompt"),
-		prompt.OptionPrefix(">(^!^)> "),
-		prompt.OptionMaxSuggestion(10),
+		prompt.WithTitle("cobra-prompt"),
+		prompt.WithPrefix(">(^!^)> "),
+		prompt.WithMaxSuggestion(10),
 	},
 	DynamicSuggestionsFunc: func(annotationValue string, document *prompt.Document) []prompt.Suggest {
 		if suggestions := cmd.GetFoodDynamic(annotationValue); suggestions != nil {
