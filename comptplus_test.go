@@ -3,6 +3,7 @@ package comptplus
 import (
 	"testing"
 
+	"github.com/elk-language/go-prompt"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
@@ -71,8 +72,8 @@ func TestFindSuggestions(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			buf := prompt.NewBuffer()
-			buf.InsertText(test.input, false, true)
-			suggestions := cp.findSuggestions(*buf.Document())
+			buf.InsertText(test.input, true)
+			suggestions, _, _ := cp.findSuggestions(*buf.Document())
 
 			assert.Len(t, suggestions, len(test.expectedResults), "Incorrect number of suggestions")
 
