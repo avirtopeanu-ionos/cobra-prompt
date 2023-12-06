@@ -1,8 +1,9 @@
 package cmd
 
 import (
+	"github.com/elk-language/go-prompt"
+	cobraprompt "github.com/ionoscloudsdk/comptplus"
 	"github.com/spf13/cobra"
-	cobraprompt "github.com/stromland/cobra-prompt"
 )
 
 var getFoodDynamicAnnotationValue = "GetFood"
