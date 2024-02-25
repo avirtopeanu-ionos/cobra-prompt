@@ -8,6 +8,7 @@ import (
 
 	"github.com/elk-language/go-prompt"
 	istrings "github.com/elk-language/go-prompt/strings"
+	shellquote "github.com/kballard/go-shellquote"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -190,7 +191,11 @@ func (co *CobraPrompt) parseInput(input string) []string {
 	if co.InArgsParser != nil {
 		return co.InArgsParser(input)
 	}
-	return strings.Fields(input)
+
+	// Treat input as a shell command and split it into arguments
+	args, _ := shellquote.Split(input)
+
+	return args
 }
 
 func (co *CobraPrompt) prepareCommands() {
