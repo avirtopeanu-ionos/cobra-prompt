@@ -8,6 +8,7 @@ import (
 
 	"github.com/elk-language/go-prompt"
 	istrings "github.com/elk-language/go-prompt/strings"
+	shellquote "github.com/kballard/go-shellquote"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -29,7 +30,7 @@ type CobraPrompt struct {
 
 	// DynamicSuggestionsFunc will be executed if a command has CallbackAnnotation as an annotation. If it's included
 	// the value will be provided to the DynamicSuggestionsFunc function.
-	DynamicSuggestionsFunc func(annotationValue string, document *prompt.Document) []prompt.Suggest
+	DynamicSuggestionsFunc func(cmd *cobra.Command, annotationValue string, document *prompt.Document) []prompt.Suggest
 
 	// PersistFlagValues will persist flags. For example have verbose turned on every command.
 	PersistFlagValues bool
@@ -61,7 +62,7 @@ type CobraPrompt struct {
 	// HookBefore is a hook that will be executed every time before a command is executed
 	HookBefore func(cmd *cobra.Command, input string) error
 
-	// InArgsParser adds a custom parser for the command line arguments (default: strings.Fields)
+	// InArgsParser adds a custom parser for the command line arguments (default: shellquote.Split)
 	InArgsParser func(args string) []string
 
 	// SuggestionFilter will be uses when filtering suggestions as typing
@@ -103,7 +104,6 @@ func (co *CobraPrompt) RunContext(ctx context.Context) {
 			defValue := strings.Trim(flag.DefValue, "[]")
 			defaultSlice := strings.Split(defValue, ",")
 			err := sliceValue.Replace(defaultSlice)
-
 			if err != nil {
 				// If there's an error parsing defaultSlice as a slice, try this workaround
 				errShouldNeverHappenButWeAreProfessionals := sliceValue.Replace([]string{})
@@ -152,8 +152,9 @@ func (co *CobraPrompt) resetFlagsToDefault(cmd *cobra.Command) {
 func (co *CobraPrompt) executeCommand(ctx context.Context) func(string) {
 	return func(input string) {
 		args := co.parseInput(input)
-		os.Args = append([]string{os.Args[0]}, args...)
-		executedCmd, _, _ := co.RootCmd.Find(os.Args[1:])
+		co.RootCmd.SetArgs(args)
+
+		executedCmd, _, _ := co.RootCmd.Find(args)
 
 		if err := co.HookBefore(executedCmd, input); err != nil {
 			co.handleUserError(err)
@@ -190,7 +191,11 @@ func (co *CobraPrompt) parseInput(input string) []string {
 	if co.InArgsParser != nil {
 		return co.InArgsParser(input)
 	}
-	return strings.Fields(input)
+
+	// Treat input as a shell command and split it into arguments
+	args, _ := shellquote.Split(input)
+
+	return args
 }
 
 func (co *CobraPrompt) prepareCommands() {
@@ -214,7 +219,8 @@ func (co *CobraPrompt) prepareCommands() {
 // findSuggestions generates command and flag suggestions for the prompt.
 func (co *CobraPrompt) findSuggestions(d prompt.Document) ([]prompt.Suggest, istrings.RuneNumber, istrings.RuneNumber) {
 	command := co.RootCmd
-	args := strings.Fields(d.CurrentLine())
+	args, _ := shellquote.Split(d.CurrentLine())
+
 	w := d.GetWordBeforeCursor()
 
 	endIndex := d.CurrentRuneIndex()
@@ -270,6 +276,7 @@ func getFlagSuggestions(cmd *cobra.Command, co *CobraPrompt, d prompt.Document) 
 
 	cmd.LocalFlags().VisitAll(addFlags)
 	cmd.InheritedFlags().VisitAll(addFlags)
+
 	return suggestions
 }
 
@@ -291,7 +298,7 @@ func getDynamicSuggestions(cmd *cobra.Command, co *CobraPrompt, d prompt.Documen
 	var suggestions []prompt.Suggest
 	if dynamicSuggestionKey, ok := cmd.Annotations[DynamicSuggestionsAnnotation]; ok {
 		if co.DynamicSuggestionsFunc != nil {
-			dynamicSuggestions := co.DynamicSuggestionsFunc(dynamicSuggestionKey, &d)
+			dynamicSuggestions := co.DynamicSuggestionsFunc(cmd, dynamicSuggestionKey, &d)
 			suggestions = append(suggestions, dynamicSuggestions...)
 		}
 	}
@@ -308,7 +315,8 @@ func getFlagValueSuggestions(cmd *cobra.Command, d prompt.Document, currentFlag 
 	}
 
 	if compFunc, exists := cmd.GetFlagCompletionFunc(currentFlag); exists {
-		completions, _ := compFunc(cmd, strings.Fields(d.CurrentLine()), currentFlag)
+		args, _ := shellquote.Split(d.CurrentLine())
+		completions, _ := compFunc(cmd, args, currentFlag)
 		for _, completion := range completions {
 			text, description, _ := strings.Cut(completion, "\t")
 			suggestions = append(suggestions, prompt.Suggest{Text: text, Description: description})
@@ -321,7 +329,7 @@ func getFlagValueSuggestions(cmd *cobra.Command, d prompt.Document, currentFlag 
 //   - current flag
 //   - whether the context is suitable for flag value suggestions.
 func getCurrentFlagAndValueContext(d prompt.Document, cmd *cobra.Command) (string, bool) {
-	prevWords := strings.Fields(d.TextBeforeCursor())
+	prevWords, _ := shellquote.Split(d.TextBeforeCursor())
 	textBeforeCursor := d.TextBeforeCursor()
 	hasSpaceSuffix := strings.HasSuffix(textBeforeCursor, " ")
 

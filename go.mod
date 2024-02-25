@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/elk-language/go-prompt v1.1.5
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
