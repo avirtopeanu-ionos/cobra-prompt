@@ -103,7 +103,6 @@ func (co *CobraPrompt) RunContext(ctx context.Context) {
 			defValue := strings.Trim(flag.DefValue, "[]")
 			defaultSlice := strings.Split(defValue, ",")
 			err := sliceValue.Replace(defaultSlice)
-
 			if err != nil {
 				// If there's an error parsing defaultSlice as a slice, try this workaround
 				errShouldNeverHappenButWeAreProfessionals := sliceValue.Replace([]string{})
@@ -152,8 +151,9 @@ func (co *CobraPrompt) resetFlagsToDefault(cmd *cobra.Command) {
 func (co *CobraPrompt) executeCommand(ctx context.Context) func(string) {
 	return func(input string) {
 		args := co.parseInput(input)
-		os.Args = append([]string{os.Args[0]}, args...)
-		executedCmd, _, _ := co.RootCmd.Find(os.Args[1:])
+		co.RootCmd.SetArgs(args)
+
+		executedCmd, _, _ := co.RootCmd.Find(args)
 
 		if err := co.HookBefore(executedCmd, input); err != nil {
 			co.handleUserError(err)
