@@ -4,24 +4,33 @@ import (
 	"testing"
 
 	"github.com/elk-language/go-prompt"
+	"github.com/elk-language/go-prompt/strings"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFindSuggestions(t *testing.T) {
-	rootCmd := newTestCommand("root", "The root cmd")
-	getCmd := newTestCommand("get", "Get something")
-	getObjectCmd := newTestCommand("object", "Get the object")
+	// Command 1: root get thing
 	getThingCmd := newTestCommand("thing", "The thing")
+
+	// Command 2: root get food
 	getFoodCmd := newTestCommand("food", "Get some food")
 	getFoodCmd.PersistentFlags().StringP("name", "n", "John", "name of the person to get some food from")
 	_ = getFoodCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"John", "Mary\tMarianne - John's Mother", "Anne"}, cobra.ShellCompDirectiveNoFileComp
 	})
 
-	rootCmd.AddCommand(getCmd)
-	getCmd.AddCommand(getObjectCmd, getThingCmd, getFoodCmd)
+	// Command 3: root get object
+	getObjectCmd := newTestCommand("object", "Get the object")
 	getObjectCmd.Flags().BoolP("verbose", "v", false, "Verbose log")
+
+	// Command 4: root get
+	getCmd := newTestCommand("get", "Get something")
+	getCmd.AddCommand(getObjectCmd, getThingCmd, getFoodCmd)
+
+	// Root: root
+	rootCmd := newTestCommand("root", "The root cmd")
+	rootCmd.AddCommand(getCmd)
 
 	cp := &CobraPrompt{
 		RootCmd: rootCmd,
@@ -72,7 +81,8 @@ func TestFindSuggestions(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			buf := prompt.NewBuffer()
-			buf.InsertText(test.input, true)
+			buf.InsertTextMoveCursor(test.input, strings.GetWidth(test.input), 0, true)
+
 			suggestions, _, _ := cp.findSuggestions(*buf.Document())
 
 			assert.Len(t, suggestions, len(test.expectedResults), "Incorrect number of suggestions")

@@ -275,6 +275,7 @@ func getFlagSuggestions(cmd *cobra.Command, co *CobraPrompt, d prompt.Document) 
 
 	cmd.LocalFlags().VisitAll(addFlags)
 	cmd.InheritedFlags().VisitAll(addFlags)
+
 	return suggestions
 }
 

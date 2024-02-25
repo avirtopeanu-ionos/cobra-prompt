@@ -7,6 +7,7 @@ import (
 	"github.com/elk-language/go-prompt"
 	cobraprompt "github.com/ionoscloudsdk/comptplus"
 	"github.com/ionoscloudsdk/comptplus/_example/cmd"
+	"github.com/spf13/cobra"
 )
 
 var advancedPrompt = &cobraprompt.CobraPrompt{
@@ -20,7 +21,7 @@ var advancedPrompt = &cobraprompt.CobraPrompt{
 		prompt.WithPrefix(">(^!^)> "),
 		prompt.WithMaxSuggestion(10),
 	},
-	DynamicSuggestionsFunc: func(annotationValue string, document *prompt.Document) []prompt.Suggest {
+	DynamicSuggestionsFunc: func(_ *cobra.Command, annotationValue string, document *prompt.Document) []prompt.Suggest {
 		if suggestions := cmd.GetFoodDynamic(annotationValue); suggestions != nil {
 			return suggestions
 		}
