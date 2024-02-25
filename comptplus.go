@@ -29,7 +29,7 @@ type CobraPrompt struct {
 
 	// DynamicSuggestionsFunc will be executed if a command has CallbackAnnotation as an annotation. If it's included
 	// the value will be provided to the DynamicSuggestionsFunc function.
-	DynamicSuggestionsFunc func(annotationValue string, document *prompt.Document) []prompt.Suggest
+	DynamicSuggestionsFunc func(cmd *cobra.Command, annotationValue string, document *prompt.Document) []prompt.Suggest
 
 	// PersistFlagValues will persist flags. For example have verbose turned on every command.
 	PersistFlagValues bool
@@ -291,7 +291,7 @@ func getDynamicSuggestions(cmd *cobra.Command, co *CobraPrompt, d prompt.Documen
 	var suggestions []prompt.Suggest
 	if dynamicSuggestionKey, ok := cmd.Annotations[DynamicSuggestionsAnnotation]; ok {
 		if co.DynamicSuggestionsFunc != nil {
-			dynamicSuggestions := co.DynamicSuggestionsFunc(dynamicSuggestionKey, &d)
+			dynamicSuggestions := co.DynamicSuggestionsFunc(cmd, dynamicSuggestionKey, &d)
 			suggestions = append(suggestions, dynamicSuggestions...)
 		}
 	}
